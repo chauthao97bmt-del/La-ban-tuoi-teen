@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# SQLite database (sẽ dùng persistent disk trên Render)
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
+backend/prisma/dev.db-shm
+backend/prisma/dev.db-wal
+
+# Build output
+frontend/dist/
+
+# Temporary files
+*.tmp
+*.temp

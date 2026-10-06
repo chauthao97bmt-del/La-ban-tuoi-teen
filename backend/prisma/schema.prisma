@@ -1,0 +1,389 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String
+  role         String   @default("STUDENT")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student         Student?
+  teacher         Teacher?
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  aiConversations AiConversation[]
+}
+
+model Class {
+  id        String   @id @default(cuid())
+  name      String
+  year      Int
+  classCode String   @unique
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  students  Student[]
+  announcements ClassAnnouncement[]
+  createdAt DateTime @default(now())
+}
+
+model Student {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id])
+  fullName    String
+  classId     String?
+  class       Class?    @relation(fields: [classId], references: [id])
+  avatar      String?   @default("🌱")
+  dateOfBirth DateTime?
+  createdAt   DateTime  @default(now())
+
+  profile                StudentProfile?
+  assessments            Assessment[]
+  moodEntries            MoodEntry[]
+  journalEntries         JournalEntry[]
+  goals                  Goal[]
+  challengeProgress      ChallengeProgress[]
+  studentBadges          StudentBadge[]
+  careerExplorations     CareerExploration[]
+  supportRequests        SupportRequest[]
+  secretMissions         StudentSecretMission[]
+  emotionCheckins        EmotionCheckin[]
+  classroomConversations ClassroomConversation[]
+  psychConversations     PsychConversation[]
+}
+
+model Teacher {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  fullName  String
+  subject   String?
+  avatar    String?  @default("👩‍🏫")
+  createdAt DateTime @default(now())
+
+  classes                Class[]
+  announcements          ClassAnnouncement[]
+  classroomConversations ClassroomConversation[]
+}
+
+model StudentProfile {
+  id             String   @id @default(cuid())
+  studentId      String   @unique
+  student        Student  @relation(fields: [studentId], references: [id])
+  riasecScores   String   @default("{}")
+  strengths      String   @default("[]")
+  values         String   @default("[]")
+  interests      String   @default("[]")
+  learningStyles String   @default("[]")
+  xp             Int      @default(0)
+  level          Int      @default(1)
+  streak         Int      @default(0)
+  lastActiveAt   DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Assessment {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id])
+  type        String
+  answers     String   @default("[]")
+  result      String   @default("{}")
+  completedAt DateTime @default(now())
+}
+
+model CareerCategory {
+  id          String   @id @default(cuid())
+  name        String
+  icon        String
+  color       String
+  description String?
+  careers     Career[]
+}
+
+model Career {
+  id                    String         @id @default(cuid())
+  categoryId            String
+  category              CareerCategory @relation(fields: [categoryId], references: [id])
+  name                  String
+  slug                  String         @unique
+  description           String
+  dailyWork             String
+  keySkills             String         @default("[]")
+  relatedSubjects       String         @default("[]")
+  workEnvironment       String
+  aiImpact              String
+  humanSkills           String         @default("[]")
+  explorationActivities String         @default("[]")
+  miniChallenge         String         @default("{}")
+  riasecMatch           String         @default("[]")
+  createdAt             DateTime       @default(now())
+
+  explorations CareerExploration[]
+}
+
+model CareerExploration {
+  id                 String   @id @default(cuid())
+  studentId          String
+  student            Student  @relation(fields: [studentId], references: [id])
+  careerId           String
+  career             Career   @relation(fields: [careerId], references: [id])
+  completedChallenge Boolean  @default(false)
+  challengeResponse  String?
+  reflection         String?
+  exploredAt         DateTime @default(now())
+}
+
+model MoodEntry {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  mood      String
+  note      String?
+  isPrivate Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model JournalEntry {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  title     String?
+  content   String
+  isPrivate Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Goal {
+  id           String    @id @default(cuid())
+  studentId    String
+  student      Student   @relation(fields: [studentId], references: [id])
+  category     String
+  title        String
+  description  String?
+  targetValue  String?
+  currentValue String?
+  dueDate      DateTime?
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Challenge {
+  id          String   @id @default(cuid())
+  dayNumber   Int      @unique
+  title       String
+  description String
+  xpReward    Int      @default(50)
+  badgeId     String?
+  badge       Badge?   @relation(fields: [badgeId], references: [id])
+  progress    ChallengeProgress[]
+}
+
+model ChallengeProgress {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id])
+  challengeId String
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  completed   Boolean   @default(false)
+  response    String?
+  completedAt DateTime?
+
+  @@unique([studentId, challengeId])
+}
+
+model Badge {
+  id            String         @id @default(cuid())
+  name          String
+  description   String
+  icon          String
+  condition     String
+  challenges    Challenge[]
+  studentBadges StudentBadge[]
+}
+
+model StudentBadge {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+
+  @@unique([studentId, badgeId])
+}
+
+model AiConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  sessionId String
+  messages  String   @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SupportRequest {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id])
+  emotion         String
+  content         String
+  visibility      String   @default("PRIVATE")
+  aiResponse      String?
+  teacherResponse String?
+  status          String   @default("PENDING")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  title     String
+  content   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ClassAnnouncement {
+  id        String   @id @default(cuid())
+  classId   String
+  class     Class    @relation(fields: [classId], references: [id])
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  title     String
+  content   String
+  type      String   @default("INFO")
+  createdAt DateTime @default(now())
+}
+
+model ParentResource {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  category  String
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  action       String
+  resourceType String
+  resourceId   String?
+  details      String   @default("{}")
+  createdAt    DateTime @default(now())
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AnonymousLetter {
+  id              String   @id @default(cuid())
+  // KHÔNG lưu studentId để bảo đảm ẩn danh thật sự
+  // Chỉ lưu classId để giáo viên biết thư từ lớp nào
+  classId         String
+  content         String
+  category        String   @default("GENERAL")  // GENERAL | EMOTION | STUDY | FRIEND | FAMILY | OTHER
+  allowReply      Boolean  @default(false)       // học sinh có cho phép GV phản hồi không
+  teacherResponse String?                         // phản hồi ẩn danh của GV
+  respondedAt     DateTime?
+  isRead          Boolean  @default(false)
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model StudentSecretMission {
+  id          String    @id @default(cuid())
+  studentId   String
+  student     Student   @relation(fields: [studentId], references: [id])
+  missionText String
+  isCompleted Boolean   @default(false)
+  reflection  String?
+  assignedAt  DateTime  @default(now())
+  completedAt DateTime?
+}
+
+// Trạm Check-in Cảm xúc - thời tiết cảm xúc
+model EmotionCheckin {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id])
+  weather     String   // HAPPY | CALM | NEUTRAL | SAD | ANXIOUS | ANGRY
+  note        String?
+  checkinDate String   // YYYY-MM-DD — mỗi ngày chỉ 1 check-in
+  createdAt   DateTime @default(now())
+
+  @@unique([studentId, checkinDate])
+}
+
+// Tâm sự với Giáo viên chủ nhiệm
+model ClassroomConversation {
+  id          String   @id @default(cuid())
+  studentId   String?  // null nếu ẩn danh
+  student     Student? @relation(fields: [studentId], references: [id])
+  teacherId   String
+  teacher     Teacher  @relation(fields: [teacherId], references: [id])
+  isAnonymous Boolean  @default(true)
+  ownerUserId String?  // User.id của HS gửi — chỉ dùng nội bộ, KHÔNG trả về cho GV
+  anonTag     String?  // "Bạn học #1234"
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  messages    ClassroomMessage[]
+}
+
+model ClassroomMessage {
+  id             String               @id @default(cuid())
+  conversationId String
+  conversation   ClassroomConversation @relation(fields: [conversationId], references: [id])
+  senderRole     String   // STUDENT | TEACHER
+  content        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+// Nhắn tin với Chuyên gia tâm lý
+model PsychConversation {
+  id             String   @id @default(cuid())
+  studentId      String?  // null nếu ẩn danh
+  student        Student? @relation(fields: [studentId], references: [id])
+  psychUserId    String   // User.id của chuyên gia
+  isAnonymous    Boolean  @default(true)
+  ownerUserId    String?  // User.id của HS gửi — chỉ dùng nội bộ
+  anonTag        String?
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  messages       PsychMessage[]
+}
+
+model PsychMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   PsychConversation @relation(fields: [conversationId], references: [id])
+  senderRole     String   // STUDENT | PSYCHOLOGIST
+  content        String
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}

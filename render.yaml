@@ -15,10 +15,6 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        value: file:/data/db/dev.db
+        value: file:./dev.db
       - key: JWT_EXPIRES_IN
         value: 7d
-    disk:
-      name: sqlite-data
-      mountPath: /data/db
-      sizeGB: 1

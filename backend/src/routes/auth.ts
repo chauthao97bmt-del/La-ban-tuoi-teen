@@ -21,7 +21,7 @@ router.post('/login', async (req: Request, res: Response) => {
       || await prisma.user.findUnique({ where: { username: username.toUpperCase() } })
       || await prisma.user.findUnique({ where: { username: username.toLowerCase() } });
     if (!user) {
-      const rows: any[] = await prisma.$queryRaw`SELECT id FROM User WHERE LOWER(username) = LOWER(${username}) LIMIT 1`;
+      const rows: any[] = await prisma.$queryRaw`SELECT id FROM "User" WHERE LOWER(username) = LOWER(${username}) LIMIT 1`;
       if (rows.length) user = await prisma.user.findUnique({ where: { id: rows[0].id } });
     }
     if (!user || !user.isActive) {

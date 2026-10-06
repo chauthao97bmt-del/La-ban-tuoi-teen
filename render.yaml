@@ -2,7 +2,7 @@ services:
   - type: web
     name: la-ban-tuoi-teen
     env: node
-    region: singapore
+    region: oregon
     plan: free
     buildCommand: bash build.sh
     startCommand: cd backend && npx prisma db push && node dist/index.js

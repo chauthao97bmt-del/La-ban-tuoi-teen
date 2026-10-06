@@ -214,52 +214,54 @@ export const TeacherDashboard: React.FC = () => {
           {/* Danh sách học sinh */}
           {students.map(student => (
             <div key={student.id} className={"card transition-colors " + getCardStyle(getNegScore(student.emotionCheckins))}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center text-xl flex-shrink-0">
-                  {student.avatar || '🌱'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  {editingStudentId === student.id ? (
-                    /* Mode chỉnh sửa */
-                    <div className="flex gap-2 items-center">
-                      <input
-                        value={editName}
-                        onChange={e => setEditName(e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-lg border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none text-sm font-semibold bg-white"
-                        autoFocus
-                        onKeyDown={e => { if (e.key === 'Enter') handleEditStudent(student.id); if (e.key === 'Escape') setEditingStudentId(null); }}
-                      />
-                      <button onClick={() => handleEditStudent(student.id)} disabled={saving || !editName.trim()}
-                        className="px-3 py-1.5 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white text-xs font-bold transition-all">
-                        {saving ? '⏳' : '✅'}
-                      </button>
-                      <button onClick={() => setEditingStudentId(null)}
-                        className="px-3 py-1.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-bold transition-all">
-                        ✕
-                      </button>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-teal-500 flex items-center justify-center text-xl flex-shrink-0">
+                    {student.avatar || '🌱'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {editingStudentId === student.id ? (
+                      /* Mode chỉnh sửa */
+                      <div className="flex gap-2 items-center">
+                        <input
+                          value={editName}
+                          onChange={e => setEditName(e.target.value)}
+                          className="flex-1 px-3 py-1.5 rounded-lg border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none text-sm font-semibold bg-white min-w-0"
+                          autoFocus
+                          onKeyDown={e => { if (e.key === 'Enter') handleEditStudent(student.id); if (e.key === 'Escape') setEditingStudentId(null); }}
+                        />
+                        <button onClick={() => handleEditStudent(student.id)} disabled={saving || !editName.trim()}
+                          className="px-3 py-1.5 rounded-lg bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white text-xs font-bold transition-all flex-shrink-0">
+                          {saving ? '⏳' : '✅'}
+                        </button>
+                        <button onClick={() => setEditingStudentId(null)}
+                          className="px-3 py-1.5 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs font-bold transition-all flex-shrink-0">
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      /* Mode xem */
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900 text-sm truncate">{student.fullName}</p>
+                        <button
+                          onClick={() => { setEditingStudentId(student.id); setEditName(student.fullName); }}
+                          className="flex-shrink-0 w-6 h-6 rounded-md bg-white/50 hover:bg-white flex items-center justify-center text-xs text-gray-500 hover:text-indigo-600 transition-colors shadow-sm"
+                          title="Sửa tên">
+                          ✏️
+                        </button>
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-1 flex-wrap">
+                      <span className="badge bg-white/60 text-gray-700 text-xs shadow-sm">⭐ {student.profile?.xp || 0} XP</span>
+                      <span className="badge bg-white/60 text-gray-700 text-xs shadow-sm">📝 {student.assessments?.length || 0} bài</span>
                     </div>
-                  ) : (
-                    /* Mode xem */
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-gray-900 text-sm truncate">{student.fullName}</p>
-                      <button
-                        onClick={() => { setEditingStudentId(student.id); setEditName(student.fullName); }}
-                        className="flex-shrink-0 w-6 h-6 rounded-md bg-white/50 hover:bg-white flex items-center justify-center text-xs text-gray-500 hover:text-indigo-600 transition-colors shadow-sm"
-                        title="Sửa tên">
-                        ✏️
-                      </button>
-                    </div>
-                  )}
-                  <div className="flex gap-2 mt-1 flex-wrap">
-                    <span className="badge bg-white/60 text-gray-700 text-xs shadow-sm">⭐ {student.profile?.xp || 0} XP</span>
-                    <span className="badge bg-white/60 text-gray-700 text-xs shadow-sm">📝 {student.assessments?.length || 0} bài</span>
                   </div>
                 </div>
-                <div className="text-right flex-shrink-0 relative">
+                <div className="text-left sm:text-right flex-shrink-0 relative mt-2 sm:mt-0 bg-white/40 p-2 rounded-xl sm:bg-transparent sm:p-0 sm:rounded-none">
                   <div className="text-xs font-medium text-gray-600 mb-1">Cảm xúc 7 ngày</div>
                   <button 
                     onClick={() => setEmotionHistoryStudent(student)}
-                    className="flex items-center justify-end gap-0.5 bg-white/60 hover:bg-white p-1.5 rounded-xl cursor-pointer transition-colors shadow-sm border border-black/5"
+                    className="flex items-center sm:justify-end gap-1 bg-white/80 sm:bg-white/60 hover:bg-white p-1.5 rounded-xl cursor-pointer transition-colors shadow-sm border border-black/5 w-full sm:w-auto overflow-x-auto"
                     title="Bấm để xem chi tiết"
                   >
                     {student.emotionCheckins && student.emotionCheckins.length > 0 ? (

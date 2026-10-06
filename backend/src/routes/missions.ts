@@ -1,14 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate, requireRole, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 const prisma = new PrismaClient();
-
-interface AuthRequest extends Request {
-  user?: { id: string; role: string; username: string };
-}
-
 const MISSIONS = [
   "Hôm nay hãy nói một lời cảm ơn với một người mà bạn thường ít nói chuyện.",
   "Hãy hỏi bố/mẹ: 'Ngày trước bố/mẹ từng muốn làm nghề gì?'",
@@ -57,7 +52,7 @@ router.post('/:id/complete', authenticate, requireRole(['STUDENT']), async (req:
     if (!student) return res.status(404).json({ error: 'Không tìm thấy học sinh.' });
 
     const mission = await prisma.studentSecretMission.findFirst({
-      where: { id: req.params.id, studentId: student.id }
+      where: { id: req.params.id as string, studentId: student.id }
     });
 
     if (!mission) return res.status(404).json({ error: 'Không tìm thấy nhiệm vụ.' });

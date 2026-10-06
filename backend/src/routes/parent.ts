@@ -13,7 +13,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const resource = await prisma.parentResource.findUnique({ where: { id: req.params.id } });
+    const resource = await prisma.parentResource.findUnique({ where: { id: req.params.id as string } });
     if (!resource) return res.status(404).json({ error: 'Không tìm thấy bài viết.' });
     res.json(resource);
   } catch (error) { res.status(500).json({ error: 'Lỗi server.' }); }

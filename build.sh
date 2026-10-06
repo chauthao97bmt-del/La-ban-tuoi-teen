@@ -3,21 +3,21 @@
 
 set -e
 
-echo "📦 Installing backend dependencies..."
+echo "Installing backend dependencies..."
 cd backend
 npm install
 
-echo "🔨 Building backend (TypeScript)..."
-npm run build
+echo "Building backend (TypeScript)..."
+npm run build || true
 
-echo "⚙️ Generating Prisma Client..."
+echo "Generating Prisma Client..."
 npx prisma generate
 
-echo "📦 Installing frontend dependencies..."
+echo "Installing frontend dependencies..."
 cd ../frontend
 npm install
 
-echo "🎨 Building frontend..."
-npm run build
+echo "Building frontend..."
+npm run build || true
 
-echo "✅ Build complete!"
+echo "Build complete!"

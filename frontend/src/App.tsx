@@ -30,14 +30,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuthStore();
   if (!user) return <>{children}</>;
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       <Navigation />
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8 max-w-full overflow-x-hidden">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pb-24 md:pb-8 max-w-full overflow-x-hidden w-full">
         <div className="w-full max-w-7xl mx-auto">
           {children}
         </div>
       </main>
-      {/* SOS floating button moved to MoodPage */}
     </div>
   );
 };

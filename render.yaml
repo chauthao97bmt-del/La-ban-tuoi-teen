@@ -14,7 +14,5 @@ services:
         value: 3001
       - key: JWT_SECRET
         generateValue: true
-      - key: DATABASE_URL
-        value: file:./dev.db
       - key: JWT_EXPIRES_IN
         value: 7d

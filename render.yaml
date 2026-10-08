@@ -3,9 +3,9 @@ services:
     name: la-ban-tuoi-teen
     env: node
     region: oregon
-    plan: free
+    plan: starter
     buildCommand: bash build.sh
-    startCommand: cd backend && npx prisma db push && node dist/index.js
+    startCommand: cd backend && node dist/index.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -15,6 +15,6 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://postgres:Kawaiioo%40%23113@db.ozddlqdmkmhxhamvjgla.supabase.co:6543/postgres?pgbouncer=true
       - key: JWT_EXPIRES_IN
         value: 7d

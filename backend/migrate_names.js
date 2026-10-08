@@ -1,0 +1,1 @@
+const Database = require('better-sqlite3'); const db = new Database('prisma/dev.db'); const rows = db.prepare('SELECT User.username, Student.fullName FROM User INNER JOIN Student ON User.id = Student.userId').all(); console.log(rows.length);

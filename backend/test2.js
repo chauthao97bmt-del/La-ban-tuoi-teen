@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function check() { const u = await prisma.user.count({where:{username:{startsWith:'9A7'}}}); console.log(u); } check().finally(()=>prisma.$disconnect())

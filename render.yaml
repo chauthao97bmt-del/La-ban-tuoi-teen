@@ -3,7 +3,7 @@ services:
     name: la-ban-tuoi-teen
     env: node
     region: oregon
-    plan: starter
+    plan: free
     buildCommand: bash build.sh
     startCommand: cd backend && node dist/index.js
     healthCheckPath: /api/health
@@ -15,6 +15,6 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
-        value: postgresql://postgres:Kawaiioo%40%23113@db.ozddlqdmkmhxhamvjgla.supabase.co:6543/postgres?pgbouncer=true
+        value: postgresql://postgres.ozddlqdmkmhxhamvjgla:Kawaiioo%40%23113@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
       - key: JWT_EXPIRES_IN
         value: 7d

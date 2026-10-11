@@ -2,31 +2,30 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { onRequest } from 'firebase-functions/v2/https';
 
 dotenv.config();
 
+// Luôn đảm bảo dùng đường dẫn IPv4 của Supabase Pooler để tránh lỗi IPv6 trên Render
+const POOLER_URL = 'postgresql://postgres.ozddlqdmkmhxhamvjgla:Kawaiioo%40%23113@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true';
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('db.ozddlqdmkmhxhamvjgla.supabase.co')) {
+  process.env.DATABASE_URL = POOLER_URL;
+}
+
 const app = express();
 const PORT = process.env.PORT || 3001;
-const isProd = process.env.NODE_ENV === 'production';
 
-// CORS: cho phép mọi origin trong production (domain Render)
+// CORS
 app.use(cors({
-  origin: isProd
-    ? true
-    : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'],
+  origin: true,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Serve frontend static files (production only)
-// __dirname trong dist/ → ../../frontend/dist là đúng
-const frontendDist = path.join(__dirname, '../../frontend/dist');
-if (isProd) {
-  app.use(express.static(frontendDist));
-}
+let isRoutesReady = false;
+let routesPromise: Promise<void> | null = null;
 
-// Lazy-load routes to avoid circular deps
 async function setupRoutes() {
   const { authRoutes } = await import('./routes/auth');
   const { studentRoutes } = await import('./routes/students');
@@ -83,25 +82,26 @@ async function setupRoutes() {
     res.status(500).json({ error: 'Lỗi máy chủ, vui lòng thử lại sau.' });
   });
 
-  // SPA fallback — phải đặt SAU tất cả API routes
-  if (isProd) {
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(frontendDist, 'index.html'));
-    });
-  }
-
-  app.listen(PORT, () => {
-    console.log(`\n🌱 La Bàn Tuổi Teen API đang chạy tại http://localhost:${PORT}`);
-    console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
-    if (!isProd) {
-      console.log(`\n📋 Tài khoản demo:`);
-      console.log(`   Admin: admin / Admin@123`);
-      console.log(`   Giáo viên: giaovien / Demo@123`);
-      console.log(`   Học sinh: 9A101 / Demo@123\n`);
-    }
-  });
+  isRoutesReady = true;
 }
 
-setupRoutes().catch(console.error);
+routesPromise = setupRoutes();
+
+// Firebase Cloud Function 'api'
+export const api = onRequest({
+  cors: true,
+  region: 'asia-southeast1',
+  maxInstances: 10
+}, async (req, res) => {
+  if (!isRoutesReady && routesPromise) await routesPromise;
+  app(req, res);
+});
+
+// Chạy server khi ở môi trường local hoặc container
+if (!process.env.FUNCTION_TARGET && !process.env.K_SERVICE) {
+  app.listen(PORT, () => {
+    console.log(`🌱 La Bàn Tuổi Teen API running on http://localhost:${PORT}`);
+  });
+}
 
 export default app;

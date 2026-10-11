@@ -57,7 +57,9 @@ router.post('/login', async (req: Request, res: Response) => {
       profile = teacher;
       fullName = teacher?.fullName || username;
     } else if (user.role === 'ADMIN') {
-      fullName = 'Quản Trị Viên';
+      const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
+      fullName = teacher?.fullName || (user.username === 'admin' ? 'Quản Trị Viên' : user.username);
+      profile = teacher;
     }
 
     res.json({

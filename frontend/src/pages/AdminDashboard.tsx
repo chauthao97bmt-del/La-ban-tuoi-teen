@@ -207,6 +207,11 @@ export const AdminDashboard: React.FC = () => {
                     )}
                     <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-gray-400">@{user.username}</span>
+                      {user.plainPassword && (
+                        <span className="badge bg-amber-50 text-amber-800 border border-amber-200 text-xs font-mono font-medium">
+                          🔑 {user.plainPassword}
+                        </span>
+                      )}
                       {user.className && <span className="badge bg-blue-50 text-blue-600 text-xs">🏫 {user.className}</span>}
                       <span className={`badge text-xs ${user.role === 'ADMIN' ? 'bg-red-100 text-red-700' : user.role === 'TEACHER' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'}`}>
                         {user.role === 'ADMIN' ? 'Admin' : user.role === 'TEACHER' ? 'GV' : 'HS'}
@@ -236,7 +241,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="text-xs font-semibold text-amber-700 flex-shrink-0">🔑 Đổi mật khẩu:</span>
                     <input value={newPw} onChange={e => setNewPw(e.target.value)}
                       className="flex-1 px-3 py-1.5 rounded-lg border border-amber-200 focus:outline-none text-sm"
-                      placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                      placeholder="Nhập mật khẩu mới (tối thiểu 4 ký tự)"
                       onKeyDown={e => { if (e.key === 'Enter') changePassword(user.id); }} />
                     <button onClick={() => changePassword(user.id)}
                       className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all">Lưu</button>

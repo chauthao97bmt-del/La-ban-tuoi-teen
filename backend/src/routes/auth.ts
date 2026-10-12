@@ -177,4 +177,36 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
   }
 });
 
+// PUT /api/auth/change-password - Người dùng tự đổi mật khẩu
+router.put('/change-password', authenticate, async (req: AuthRequest, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Vui lòng nhập mật khẩu hiện tại và mật khẩu mới.' });
+    }
+    if (String(newPassword).trim().length < 4) {
+      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 4 ký tự.' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id } });
+    if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
+
+    const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Mật khẩu hiện tại không chính xác.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword.trim(), 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, plainPassword: newPassword.trim() }
+    });
+
+    res.json({ success: true, message: 'Đổi mật khẩu thành công!' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ error: 'Lỗi server khi đổi mật khẩu.' });
+  }
+});
+
 export { router as authRoutes };

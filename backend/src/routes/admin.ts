@@ -26,7 +26,7 @@ router.get('/users', async (req: AuthRequest, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       select: {
-        id: true, username: true, email: true, role: true, isActive: true, createdAt: true,
+        id: true, username: true, email: true, role: true, isActive: true, createdAt: true, plainPassword: true,
         student: { select: { id: true, fullName: true, class: { select: { name: true } } } },
         teacher: { select: { id: true, fullName: true } },
       },
@@ -54,15 +54,18 @@ router.put('/users/:id/password', async (req: AuthRequest, res: Response) => {
   try {
     const bcrypt = await import('bcryptjs');
     const { newPassword } = req.body;
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+    if (!newPassword || String(newPassword).trim().length < 4) {
+      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 4 ký tự.' });
     }
     const user = await prisma.user.findUnique({ where: { id: req.params.id as string } });
     if (!user) return res.status(404).json({ error: 'Không tìm thấy người dùng.' });
 
-    const hash = await bcrypt.hash(newPassword, 10);
-    await prisma.user.update({ where: { id: req.params.id as string }, data: { passwordHash: hash } });
-    res.json({ success: true, message: `Đã đổi mật khẩu cho ${user.username}` });
+    const hash = await bcrypt.hash(String(newPassword).trim(), 10);
+    await prisma.user.update({
+      where: { id: req.params.id as string },
+      data: { passwordHash: hash, plainPassword: String(newPassword).trim() }
+    });
+    res.json({ success: true, message: `Đã đổi mật khẩu cho ${user.username}`, newPassword: String(newPassword).trim() });
   } catch (error) { res.status(500).json({ error: 'Lỗi server.' }); }
 });
 

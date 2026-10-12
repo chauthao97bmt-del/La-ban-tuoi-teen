@@ -12,6 +12,7 @@ model User {
   username     String   @unique
   email        String?  @unique
   passwordHash String
+  plainPassword String?  @default("Demo@123")
   role         String   @default("STUDENT")
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())

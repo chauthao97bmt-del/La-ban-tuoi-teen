@@ -185,6 +185,7 @@ router.get('/students', async (req: AuthRequest, res: Response) => {
       include: {
         profile: true,
         class: true,
+        user: { select: { id: true, username: true, plainPassword: true, role: true } },
         assessments: true,
         careerExplorations: true,
         challengeProgress: { where: { completed: true } },
@@ -315,6 +316,49 @@ router.put('/students/:id/update', async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Lỗi server.' });
+  }
+});
+
+// PUT /api/teacher/students/:id/reset-password — GVCN & Admin đổi/đặt lại mật khẩu học sinh
+router.put('/students/:id/reset-password', async (req: AuthRequest, res: Response) => {
+  try {
+    const bcrypt = await import('bcryptjs');
+    const teacher = await getTeacherWithClasses(req, false);
+    if (!teacher && req.user!.role !== 'ADMIN') return res.status(403).json({ error: 'Không có quyền.' });
+
+    const { newPassword } = req.body;
+    if (!newPassword || String(newPassword).trim().length < 4) {
+      return res.status(400).json({ error: 'Mật khẩu mới phải có ít nhất 4 ký tự.' });
+    }
+
+    const student = await prisma.student.findUnique({
+      where: { id: req.params.id as string },
+      include: { user: true }
+    });
+    if (!student) return res.status(404).json({ error: 'Không tìm thấy học sinh.' });
+
+    // Kiểm tra quyền nếu là giáo viên
+    if (req.user!.role !== 'ADMIN') {
+      const validClassIds = teacher?.classes?.map((c: any) => c.id) || [];
+      if (student.classId && !validClassIds.includes(student.classId)) {
+        return res.status(403).json({ error: 'Học sinh không thuộc lớp của bạn.' });
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(String(newPassword).trim(), 10);
+    await prisma.user.update({
+      where: { id: student.userId },
+      data: { passwordHash, plainPassword: String(newPassword).trim() }
+    });
+
+    res.json({
+      success: true,
+      message: `Đã đổi mật khẩu cho học sinh ${student.fullName} thành công!`,
+      newPassword: String(newPassword).trim()
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Lỗi server khi đổi mật khẩu học sinh.' });
   }
 });
 

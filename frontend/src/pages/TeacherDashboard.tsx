@@ -31,6 +31,28 @@ export const TeacherDashboard: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [emotionHistoryStudent, setEmotionHistoryStudent] = useState<any | null>(null);
 
+  // Đổi mật khẩu học sinh
+  const [resetPwStudentId, setResetPwStudentId] = useState<string | null>(null);
+  const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [resetPwLoading, setResetPwLoading] = useState(false);
+  const [resetPwMsg, setResetPwMsg] = useState<{ id: string; text: string; ok: boolean } | null>(null);
+
+  const handleResetPassword = async (studentId: string) => {
+    if (!newPasswordVal.trim()) return;
+    setResetPwLoading(true);
+    try {
+      const res = await api.put(`/teacher/students/${studentId}/reset-password`, { newPassword: newPasswordVal.trim() });
+      setResetPwMsg({ id: studentId, text: res.data.message, ok: true });
+      setNewPasswordVal('');
+      setTimeout(() => { setResetPwStudentId(null); setResetPwMsg(null); }, 2500);
+      await reloadStudents();
+    } catch (err: any) {
+      setResetPwMsg({ id: studentId, text: err.response?.data?.error || 'Lỗi khi đổi mật khẩu.', ok: false });
+    } finally {
+      setResetPwLoading(false);
+    }
+  };
+
   useEffect(() => {
     Promise.all([
       api.get('/teacher/overview'),
@@ -251,10 +273,68 @@ export const TeacherDashboard: React.FC = () => {
                         </button>
                       </div>
                     )}
-                    <div className="flex gap-2 mt-1 flex-wrap">
+                    <div className="flex gap-2 mt-1 flex-wrap items-center">
+                      {student.user?.username && (
+                        <span className="text-xs text-indigo-700 font-semibold bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                          @{student.user.username}
+                        </span>
+                      )}
+                      <span className="badge bg-amber-50 text-amber-800 border border-amber-200 text-xs font-mono font-medium" title="Mật khẩu hiện tại của học sinh">
+                        🔑 {student.user?.plainPassword || 'Demo@123'}
+                      </span>
+                      <button
+                        onClick={() => {
+                          if (resetPwStudentId === student.id) {
+                            setResetPwStudentId(null);
+                            setNewPasswordVal('');
+                            setResetPwMsg(null);
+                          } else {
+                            setResetPwStudentId(student.id);
+                            setNewPasswordVal('');
+                            setResetPwMsg(null);
+                          }
+                        }}
+                        className="text-xs text-gray-500 hover:text-indigo-600 bg-white/70 hover:bg-white px-2 py-0.5 rounded-md border border-gray-200 transition-colors"
+                        title="Đổi mật khẩu cho học sinh"
+                      >
+                        ⚙️ Đổi MK
+                      </button>
                       <span className="badge bg-white/60 text-gray-700 text-xs shadow-sm">⭐ {student.profile?.xp || 0} XP</span>
                       <span className="badge bg-white/60 text-gray-700 text-xs shadow-sm">📝 {student.assessments?.length || 0} bài</span>
                     </div>
+
+                    {/* Inline đổi mật khẩu */}
+                    {resetPwStudentId === student.id && (
+                      <div className="mt-2.5 p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex flex-wrap gap-2 items-center">
+                        <span className="text-xs font-semibold text-amber-800">Mật khẩu mới:</span>
+                        <input
+                          type="text"
+                          value={newPasswordVal}
+                          onChange={e => setNewPasswordVal(e.target.value)}
+                          placeholder="Nhập mật khẩu mới (tối thiểu 4 ký tự)"
+                          className="flex-1 min-w-[180px] px-2.5 py-1 text-xs bg-white border border-amber-300 rounded-lg focus:outline-none focus:border-amber-500"
+                          onKeyDown={e => { if (e.key === 'Enter') handleResetPassword(student.id); }}
+                        />
+                        <button
+                          onClick={() => handleResetPassword(student.id)}
+                          disabled={resetPwLoading || !newPasswordVal.trim()}
+                          className="px-3 py-1 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white text-xs font-bold rounded-lg transition-all"
+                        >
+                          {resetPwLoading ? 'Đang lưu...' : 'Lưu MK'}
+                        </button>
+                        <button
+                          onClick={() => { setResetPwStudentId(null); setNewPasswordVal(''); setResetPwMsg(null); }}
+                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 text-gray-600 text-xs rounded-lg"
+                        >
+                          Hủy
+                        </button>
+                        {resetPwMsg?.id === student.id && (
+                          <div className={`w-full text-xs font-medium ${resetPwMsg.ok ? 'text-green-600' : 'text-red-500'}`}>
+                            {resetPwMsg.text}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="text-left sm:text-right flex-shrink-0 relative mt-2 sm:mt-0 bg-white/40 p-2 rounded-xl sm:bg-transparent sm:p-0 sm:rounded-none">

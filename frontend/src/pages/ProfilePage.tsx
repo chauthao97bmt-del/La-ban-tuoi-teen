@@ -8,6 +8,46 @@ export const ProfilePage: React.FC = () => {
   const [badges, setBadges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Đổi mật khẩu
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [changingPw, setChangingPw] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPw || !newPw || !confirmPw) {
+      setPwMsg({ type: 'err', text: 'Vui lòng điền đầy đủ các ô mật khẩu.' });
+      return;
+    }
+    if (newPw.length < 4) {
+      setPwMsg({ type: 'err', text: 'Mật khẩu mới phải có ít nhất 4 ký tự.' });
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setPwMsg({ type: 'err', text: 'Mật khẩu mới và xác nhận mật khẩu không khớp nhau.' });
+      return;
+    }
+
+    setChangingPw(true);
+    setPwMsg(null);
+    try {
+      const res = await api.put('/auth/change-password', {
+        currentPassword: currentPw,
+        newPassword: newPw,
+      });
+      setPwMsg({ type: 'ok', text: `✅ ${res.data.message || 'Đổi mật khẩu thành công!'}` });
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+    } catch (err: any) {
+      setPwMsg({ type: 'err', text: err.response?.data?.error || 'Có lỗi xảy ra khi đổi mật khẩu.' });
+    } finally {
+      setChangingPw(false);
+    }
+  };
+
   useEffect(() => {
     api.get('/profile/my').then(r => {
       setProfile(r.data);
@@ -153,6 +193,66 @@ export const ProfilePage: React.FC = () => {
             <div className="text-xs text-gray-500">{s.label}</div>
           </div>
         ))}
+      </div>
+
+      {/* Đổi mật khẩu */}
+      <div className="card border border-gray-100 shadow-sm">
+        <h2 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <span>🔒</span> Đổi Mật Khẩu
+        </h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Bạn có thể chủ động đổi mật khẩu để bảo vệ tài khoản cá nhân.
+        </p>
+
+        <form onSubmit={handleChangePassword} className="space-y-3 max-w-md">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Mật khẩu hiện tại</label>
+            <input
+              type="password"
+              value={currentPw}
+              onChange={e => setCurrentPw(e.target.value)}
+              placeholder="Nhập mật khẩu đang dùng (mặc định: Demo@123)"
+              className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:border-green-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Mật khẩu mới</label>
+              <input
+                type="password"
+                value={newPw}
+                onChange={e => setNewPw(e.target.value)}
+                placeholder="Tối thiểu 4 ký tự"
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:border-green-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
+              <input
+                type="password"
+                value={confirmPw}
+                onChange={e => setConfirmPw(e.target.value)}
+                placeholder="Nhập lại mật khẩu mới"
+                className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-sm focus:border-green-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          {pwMsg && (
+            <div className={`p-3 rounded-xl text-xs font-medium ${pwMsg.type === 'ok' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+              {pwMsg.text}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={changingPw || !currentPw || !newPw || !confirmPw}
+            className="px-5 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white text-xs font-bold transition-all shadow-sm"
+          >
+            {changingPw ? '⏳ Đang lưu...' : '🔑 Cập nhật mật khẩu'}
+          </button>
+        </form>
       </div>
 
       <div className="h-20 md:h-4"></div>

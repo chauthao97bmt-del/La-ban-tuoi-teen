@@ -23,10 +23,20 @@ router.get('/unread-count', authenticate, async (req: AuthRequest, res: Response
         });
       }
     } else if (req.user!.role === 'TEACHER' || req.user!.role === 'ADMIN') {
+      let teacherIds: string[] = [];
       const teacher = await prisma.teacher.findUnique({ where: { userId } });
-      if (teacher) {
+      if (teacher) teacherIds.push(teacher.id);
+
+      if (['gv.9a7', 'co.thao', 'nguyenthi.chauthao'].includes(req.user!.username)) {
+        const related = await prisma.teacher.findMany({
+          where: { user: { username: { in: ['gv.9a7', 'co.thao', 'nguyenthi.chauthao'] } } }
+        });
+        teacherIds = Array.from(new Set([...teacherIds, ...related.map(t => t.id)]));
+      }
+
+      if (teacherIds.length > 0) {
         unreadTeacher = await prisma.classroomMessage.count({
-          where: { conversation: { teacherId: teacher.id }, senderRole: 'STUDENT', isRead: false }
+          where: { conversation: { teacherId: { in: teacherIds } }, senderRole: 'STUDENT', isRead: false }
         });
       }
     } else if (req.user!.role === 'PSYCHOLOGIST') {
@@ -140,11 +150,19 @@ router.get('/teacher/conversations', authenticate, requireRole(['STUDENT']), asy
 async function loadTeacherConv(id: string, user: AuthRequest['user']) {
   const conv = await db.classroomConversation.findUnique({
     where: { id },
-    include: { teacher: true, student: studentInclude, messages: { orderBy: { createdAt: 'asc' } } }
+    include: { teacher: { include: { user: true } }, student: studentInclude, messages: { orderBy: { createdAt: 'asc' } } }
   });
   if (!conv) return { conv: null, side: null };
   if (user!.role === 'STUDENT') return { conv, side: conv.ownerUserId === user!.id ? 'STUDENT' : null };
   if (conv.teacher.userId === user!.id) return { conv, side: 'TEACHER' };
+
+  // Cho phép đồng bộ giữa gv.9a7 và co.thao hoặc Admin
+  const is9A7Staff = ['gv.9a7', 'co.thao', 'nguyenthi.chauthao'].includes(user!.username);
+  const convTeacherUsername = conv.teacher?.user?.username;
+  const isConv9A7 = ['gv.9a7', 'co.thao', 'nguyenthi.chauthao'].includes(convTeacherUsername);
+  if (is9A7Staff && isConv9A7) return { conv, side: 'TEACHER' };
+  if (user!.role === 'ADMIN') return { conv, side: 'TEACHER' };
+
   return { conv, side: null };
 }
 
@@ -205,10 +223,21 @@ router.post('/teacher/conversation/:id/reply', authenticate, async (req: AuthReq
 // GET /api/talk/teacher/inbox — GVCN xem hộp thư
 router.get('/teacher/inbox', authenticate, requireRole(['TEACHER', 'ADMIN', 'PSYCHOLOGIST']), async (req: AuthRequest, res: Response) => {
   try {
+    let teacherIds: string[] = [];
     const teacher = await prisma.teacher.findUnique({ where: { userId: req.user!.id } });
-    if (!teacher) return res.json([]);
+    if (teacher) teacherIds.push(teacher.id);
+
+    if (['gv.9a7', 'co.thao', 'nguyenthi.chauthao'].includes(req.user!.username)) {
+      const related = await prisma.teacher.findMany({
+        where: { user: { username: { in: ['gv.9a7', 'co.thao', 'nguyenthi.chauthao'] } } }
+      });
+      teacherIds = Array.from(new Set([...teacherIds, ...related.map(t => t.id)]));
+    }
+
+    if (teacherIds.length === 0) return res.json([]);
+
     const convs = await db.classroomConversation.findMany({
-      where: { teacherId: teacher.id },
+      where: { teacherId: { in: teacherIds } },
       include: { student: studentInclude, messages: { orderBy: { createdAt: 'desc' }, take: 1 } },
       orderBy: { updatedAt: 'desc' }
     });

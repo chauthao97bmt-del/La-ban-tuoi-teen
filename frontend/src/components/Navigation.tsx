@@ -44,6 +44,7 @@ const psychNavItems = [
 const adminNavItems = [
   { icon: '🏠', label: 'Tổng quan', path: '/admin' },
   { icon: '👨‍🏫', label: 'Lớp chủ nhiệm', path: '/teacher' },
+  { icon: '💬', label: 'Tin nhắn HS', path: '/teacher/support' },
   { icon: '👥', label: 'Người dùng', path: '/admin/users' },
   { icon: '💼', label: 'Nghề nghiệp', path: '/admin/careers' },
   { icon: '⚙️', label: 'Cài đặt', path: '/admin/settings' },
